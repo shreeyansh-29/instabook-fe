@@ -4,3 +4,8 @@
   overflow-y: scroll;
   scrollbar-width: none;
 }
+
+.emoji {
+  font-size: 25px;
+  color: grey;
+}

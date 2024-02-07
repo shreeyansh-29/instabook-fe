@@ -12,13 +12,14 @@ import {ArrowBackIcon} from "@chakra-ui/icons";
 import {getSender, getSenderFull} from "../config/chatLogics";
 import ProfileModal from "./miscellaneous/profileModal";
 import UpdateGroupChatModal from "./miscellaneous/updateGroupChatModal";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import axios from "axios";
 import animationData from "../assets/animations/typing.json";
 import "./styles.css";
 import io from "socket.io-client";
 import ScrollableChat from "./scrollableChat";
 import Lottie from "react-lottie";
+import EmojiPicker from "emoji-picker-react";
 
 const ENDPOINT = process.env.REACT_APP_API_URL;
 let socket, selectedChatCompare;
@@ -30,6 +31,8 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIstyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef(null);
 
   const {user, selectedChat, setSelectedChat, notification, setNotification} =
     ChatState();
@@ -66,6 +69,40 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
         description: "Failed to Load the messages",
         status: "error",
         duration: 3000,
+        isClosable: true,
+        position: "bottom",
+      });
+    }
+  };
+
+  const handleClick = async () => {
+    setShowEmojiPicker(false);
+    socket.emit("stop typing", selectedChat._id);
+    try {
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      setNewMessage("");
+      const {data} = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/message`,
+        {
+          content: newMessage,
+          chatId: selectedChat._id,
+        },
+        config
+      );
+      socket.emit("new Message", data);
+      setMessages([...messages, data]);
+    } catch (error) {
+      toast({
+        title: "Error Occured!",
+        description: "Failed to send the Message",
+        status: "error",
+        duration: 5000,
         isClosable: true,
         position: "bottom",
       });
@@ -130,6 +167,10 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
     }, timerLength);
   };
 
+  const onEmojiClick = (emojiData) => {
+    setNewMessage((prev) => prev + emojiData.emoji);
+  };
+
   useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
@@ -160,6 +201,24 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
       }
     });
   });
+
+  useEffect(() => {
+    const handleClickOutsideEmojiPicker = (event) => {
+      if (
+        showEmojiPicker &&
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutsideEmojiPicker);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutsideEmojiPicker);
+    };
+  }, [showEmojiPicker]);
 
   return (
     <>
@@ -223,32 +282,74 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
                 <ScrollableChat messages={messages} />
               </div>
             )}
+            {istyping ? (
+              <div>
+                <Lottie
+                  options={defaultOptions}
+                  width={70}
+                  height={35}
+                  style={{
+                    marginLeft: 0,
+                    marginTop: 15,
+                  }}
+                />
+              </div>
+            ) : (
+              <></>
+            )}
 
             <FormControl
               onKeyDown={sendMessage}
               id="first-name"
               isRequired
               mt={3}
+              display={'flex'}
+
             >
-              {istyping ? (
-                <div>
-                  <Lottie
-                    options={defaultOptions}
-                    width={70}
-                    style={{marginBottom: 15, marginLeft: 0}}
-                  />
-                </div>
-              ) : (
-                <></>
-              )}
+              <Box
+                className="emoji"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
+                {showEmojiPicker ? (
+                  <i class="fas fa-times-circle"></i>
+                ) : (
+                  <i class="fas fa-laugh"></i>
+                )}
+              </Box>
               <Input
                 variant="filled"
-                bg="#E0E0E0"
                 placeholder="Enter a message.."
                 value={newMessage}
                 onChange={typingHandler}
+                ml={2}
+                mr={2}
+                outline={"none"}
+                border={"none"}
+                bg={newMessage ? "#E0E0E0" : "#fff"}
+                _focus={{
+                  bg: "#E0E0E0",
+                }}
               />
+              <Box className="emoji" onClick={handleClick}>
+                <i
+                  className="fas fa-arrow-alt-circle-right"
+                  style={{color: newMessage && "#38B2AC"}}
+                ></i>
+              </Box>
             </FormControl>
+            {showEmojiPicker && (
+              <Box ref={emojiPickerRef} h={"40%"}>
+                <EmojiPicker
+                  id={"emoji-picker"}
+                  searchDisabled={true}
+                  style={{width: "100%", marginTop: "10px"}}
+                  onEmojiClick={onEmojiClick}
+                  previewConfig={{
+                    showPreview: false,
+                  }}
+                />
+              </Box>
+            )}
           </Box>
         </>
       ) : (
