@@ -8,10 +8,11 @@ import {useState} from "react";
 import {useHistory} from "react-router-dom";
 
 const Signup = () => {
-  const [show, setShow] = useState(false);
   const toast = useToast();
   const history = useHistory();
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [confirmpassword, setConfirmpassword] = useState("");
@@ -19,7 +20,10 @@ const Signup = () => {
   const [pic, setPic] = useState("");
   const [picLoading, setPicLoading] = useState(false);
 
-  const handleClick = () => setShow(!show);
+  const handlePasswordClick = () => setShowPassword(!showPassword);
+  const handleConfirmPasswordClick = () =>
+    setShowConfirmPassword(!showConfirmPassword);
+
   const submitHandler = async () => {
     localStorage.removeItem("userInfo");
     setPicLoading(true);
@@ -144,6 +148,7 @@ const Signup = () => {
         <Input
           placeholder="Enter Your Name"
           onChange={(e) => setName(e.target.value)}
+          autoComplete="off"
         />
       </FormControl>
       <FormControl id="email" isRequired>
@@ -152,20 +157,21 @@ const Signup = () => {
           type="email"
           placeholder="Enter Your Email Address"
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="off"
         />
       </FormControl>
       <FormControl id="password" isRequired>
         <FormLabel>Password</FormLabel>
         <InputGroup size="md">
           <Input
-            autoComplete="false"
-            type={show ? "text" : "password"}
+            autoComplete="off"
+            type={showPassword ? "text" : "password"}
             placeholder="Enter Password"
             onChange={(e) => setPassword(e.target.value)}
           />
           <InputRightElement width="4.5rem">
-            <Button h="1.75rem" size="sm" onClick={handleClick}>
-              {show ? "Hide" : "Show"}
+            <Button h="1.75rem" size="sm" onClick={handlePasswordClick}>
+              {showPassword ? "Hide" : "Show"}
             </Button>
           </InputRightElement>
         </InputGroup>
@@ -174,13 +180,14 @@ const Signup = () => {
         <FormLabel>Confirm Password</FormLabel>
         <InputGroup size="md">
           <Input
-            type={show ? "text" : "password"}
+            type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm password"
             onChange={(e) => setConfirmpassword(e.target.value)}
+            autoComplete="off"
           />
           <InputRightElement width="4.5rem">
-            <Button h="1.75rem" size="sm" onClick={handleClick}>
-              {show ? "Hide" : "Show"}
+            <Button h="1.75rem" size="sm" onClick={handleConfirmPasswordClick}>
+              {showConfirmPassword ? "Hide" : "Show"}
             </Button>
           </InputRightElement>
         </InputGroup>
